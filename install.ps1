@@ -1,5 +1,5 @@
-# install.ps1 — Install autonomous-ai-itagents skills (companion to autonomous-claude-skills)
-# Remote install: irm https://raw.githubusercontent.com/fransanda/autonomous-ai-itagents/main/install.ps1 | iex
+# install.ps1 — Install autonomous-claude-itagents skills (companion to autonomous-claude-skills)
+# Remote install: irm https://raw.githubusercontent.com/fransanda/autonomous-claude-itagents/main/install.ps1 | iex
 # Local install:  .\install.ps1 (from inside a cloned repo)
 
 $ErrorActionPreference = "Stop"
@@ -19,12 +19,12 @@ if ($PSScriptRoot -and (Test-Path (Join-Path $PSScriptRoot "skills\itagentsrevie
     }
     $tempClone = Join-Path $env:TEMP "_acs_itagents_install_$(Get-Random)"
     Write-Host "Fetching itagents..." -ForegroundColor Cyan
-    git clone --depth=1 --quiet https://github.com/fransanda/autonomous-ai-itagents.git $tempClone
+    git clone --depth=1 --quiet https://github.com/fransanda/autonomous-claude-itagents.git $tempClone
     $sourceRoot = $tempClone
 }
 
 Write-Host ""
-Write-Host "Installing autonomous-ai-itagents skills..." -ForegroundColor Cyan
+Write-Host "Installing autonomous-claude-itagents skills..." -ForegroundColor Cyan
 Write-Host ""
 
 $installed = @()

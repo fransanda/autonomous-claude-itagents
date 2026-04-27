@@ -101,7 +101,7 @@ This fixes the multi-agent bouncing-feedback issue. ALL agents review at once, f
        any custom agents from .agents/registry.md based on their `runs_on` field
 
 2. For each relevant agent (one at a time, NEVER in parallel):
-   - Update STATE.md: current_agent=<name>
+   - Update STATE.md: current_agent=<n>
    - Print: → <agent-name> reviewing Task #<id>...
    - Load only that agent's .md file (DO NOT keep multiple agent definitions in context simultaneously)
    - Have it produce a findings list with severity (blocker/P1/P2/suggestion)
@@ -227,7 +227,7 @@ Keep output minimal. The user can `tail -f PROGRESS.md` for detail.
 
 ## APPENDIX A: Embedded agent fallbacks
 
-If the global templates folder is missing, create these `.agents/*.md` files inline. Each file's content matches the equivalent template under `agents/` in this repo (see the agents/ folder of autonomous-ai-itagents). Use the exact frontmatter and body. Default agents to create:
+If the global templates folder is missing, create these `.agents/*.md` files inline. Each file's content matches the equivalent template under `agents/` in this repo (see the agents/ folder of autonomous-claude-itagents). Use the exact frontmatter and body. Default agents to create:
 
 - `.agents/coordinator.md` (you — but useful for transparency)
 - `.agents/builder.md`
@@ -240,4 +240,4 @@ If the global templates folder is missing, create these `.agents/*.md` files inl
 - `.agents/task-checker.md`
 - `.agents/registry.md` (the registry of which agents run when)
 
-For source content, fetch from: https://github.com/fransanda/autonomous-ai-itagents/tree/main/agents
+For source content, fetch from: https://github.com/fransanda/autonomous-claude-itagents/tree/main/agents

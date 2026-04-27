@@ -1,6 +1,6 @@
 #!/bin/bash
-# install.sh — Install autonomous-ai-itagents skills (companion to autonomous-claude-skills)
-# Remote: curl -fsSL https://raw.githubusercontent.com/fransanda/autonomous-ai-itagents/main/install.sh | bash
+# install.sh — Install autonomous-claude-itagents skills (companion to autonomous-claude-skills)
+# Remote: curl -fsSL https://raw.githubusercontent.com/fransanda/autonomous-claude-itagents/main/install.sh | bash
 # Local:  ./install.sh (from inside a cloned repo)
 
 set -e
@@ -17,14 +17,14 @@ else
         echo "Error: git is required to install. Install git first."
         exit 1
     fi
-    TEMP_CLONE="$(mktemp -d)/autonomous-ai-itagents"
+    TEMP_CLONE="$(mktemp -d)/autonomous-claude-itagents"
     echo "Fetching itagents..."
-    git clone --depth=1 --quiet https://github.com/fransanda/autonomous-ai-itagents.git "$TEMP_CLONE"
+    git clone --depth=1 --quiet https://github.com/fransanda/autonomous-claude-itagents.git "$TEMP_CLONE"
     SOURCE_ROOT="$TEMP_CLONE"
 fi
 
 echo ""
-echo "Installing autonomous-ai-itagents skills..."
+echo "Installing autonomous-claude-itagents skills..."
 echo ""
 
 # 1. Install the two skills (/itagentsreview and /additagent) to both possible skill dirs

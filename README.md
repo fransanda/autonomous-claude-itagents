@@ -1,4 +1,4 @@
-# 🤖 Autonomous AI ITAgents
+# 🤖 Autonomous Claude ITAgents
 
 **A 9-agent QA pipeline that reviews every line of code Claude writes.**
 
@@ -95,16 +95,16 @@ Windows (PowerShell):
 irm https://raw.githubusercontent.com/fransanda/autonomous-claude-skills/main/install.ps1 | iex
 ```
 
-**Step 2: Install autonomous-ai-itagents (this repo)**
+**Step 2: Install autonomous-claude-itagents (this repo)**
 
 Mac/Linux:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/fransanda/autonomous-ai-itagents/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/fransanda/autonomous-claude-itagents/main/install.sh | bash
 ```
 
 Windows (PowerShell):
 ```powershell
-irm https://raw.githubusercontent.com/fransanda/autonomous-ai-itagents/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/fransanda/autonomous-claude-itagents/main/install.ps1 | iex
 ```
 
 **Restart Claude Code** after installing.
@@ -287,7 +287,7 @@ This is **per-project memory** — no global state, no extra cost. It's just a m
 | Still not found | Re-run install — skills go in both `~/.claude/skills/` and `~/.agents/skills/` |
 | `/itagentsreview` says agent system not set up | Run it once — it auto-creates `.agents/` from global templates |
 | Pipeline stuck on a task | Check `.agents/STATE.md` to see what step it was on. Delete the file to reset. The task will go through again. |
-| Want to disable a specific agent | Edit its frontmatter in `.agents/<name>.md`: set `disabled: true` |
+| Want to disable a specific agent | Edit its frontmatter in `.agents/<n>.md`: set `disabled: true` |
 | LESSONS.md got too big | It auto-condenses at 300 lines, but you can manually run /itagentsreview which checks every cycle |
 | Custom agent producing too many false positives | Set `mode: shadow` in its frontmatter, or set `disabled: true` to remove it |
 | Want to start fresh | Delete `.agents/STATE.md` and clear `REVIEW_QUEUE.md` |
