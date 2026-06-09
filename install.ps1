@@ -1,4 +1,4 @@
-# install.ps1 — Install autonomous-claude-itagents skills (companion to autonomous-claude-skills)
+﻿# install.ps1 — Install autonomous-claude-itagents skills (companion to autonomous-claude-skills)
 # Remote install: irm https://raw.githubusercontent.com/fransanda/autonomous-claude-itagents/main/install.ps1 | iex
 # Local install:  .\install.ps1 (from inside a cloned repo)
 
