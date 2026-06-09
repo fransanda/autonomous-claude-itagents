@@ -1,6 +1,6 @@
 # 🤖 Autonomous Claude ITAgents
 
-**A 9-agent QA pipeline that reviews every line of code Claude writes.**
+**A 10-agent QA pipeline that reviews every line of code Claude writes.**
 
 This repo is the companion to [autonomous-claude-skills](https://github.com/fransanda/autonomous-claude-skills). When both are installed, every project gets:
 
