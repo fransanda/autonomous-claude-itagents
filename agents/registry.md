@@ -15,6 +15,7 @@ This file lists every agent the Coordinator can invoke during /itagentsreview. E
 | dependency-auditor | dep-changes-only | P1 | live | CVEs, outdated, licenses, unused |
 | tester | every-task | blocker | live | runs tests, a11y, RBAC, edge inputs |
 | task-checker | every-task | blocker | live | requirements vs delivery (final gate) |
+| pr-merger | on-demand | blocker | live | final gate before PR merge (Opus) |
 
 ## Modes
 - `live` — agent's findings can block tasks based on severity
@@ -29,6 +30,7 @@ This file lists every agent the Coordinator can invoke during /itagentsreview. E
 - `full-audit-only` — only during /itagentsreview --full
 - `on-keyword:WORD` — only when task title/description contains WORD
 - `always` — runs even outside normal task flow (only coordinator should use this)
+- `on-demand` — only invoked by specific skills (not part of the regular /itagentsreview pipeline)
 
 ## How custom agents graduate from shadow → live
 After 3 successful pipeline runs without producing false positives (i.e. its findings were either valid or low-confidence enough to be ignored), the Coordinator promotes a shadow agent to live mode automatically. This protects the pipeline from poorly-defined custom agents on day one.
