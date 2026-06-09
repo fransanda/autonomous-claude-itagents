@@ -1,6 +1,7 @@
 ---
 name: builder
 role: developer
+runs_on: when-assigned
 permissions: read-write-code
 writes: source code, tests, configuration files
 ---

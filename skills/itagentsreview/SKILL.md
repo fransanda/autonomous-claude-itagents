@@ -30,7 +30,7 @@ fi
 ### 2. Check or create the agent system files
 If any of these files don't exist, create them with starter content:
 - `BACKLOG.md`, `BACKLOG_FUTURE.md`, `BACKLOG_BLOCKED.md`, `REVIEW_QUEUE.md`, `PROGRESS.md`, `LESSONS.md`
-- `.agents/` folder with all 9 default agents from the global templates at `~/.claude/skills/_itagents_templates/agents/` or `~/.agents/skills/_itagents_templates/agents/`
+- `.agents/` folder with all 10 default agents from the global templates at `~/.claude/skills/_itagents_templates/agents/` or `~/.agents/skills/_itagents_templates/agents/`
 - `.agents/registry.md` listing active agents
 
 If templates aren't found globally, create the agent files using the embedded definitions in this skill (see APPENDIX A at the bottom).
@@ -79,7 +79,8 @@ while BACKLOG.has_items() OR REVIEW_QUEUE.has_items():
         Continue loop.
 
     # === Step D: Token management ===
-    Every 5 completed tasks: run /compact to free context
+    Every 5 completed tasks: drop all loaded agent personas and stale diffs from working context;
+        rely on auto-compact (you cannot invoke /compact yourself — keep context lean instead)
     If LESSONS.md > 300 lines: run condense_lessons() (see below)
 
 When loop exits, print final summary (see below) and clear STATE.md.
@@ -93,11 +94,9 @@ This fixes the multi-agent bouncing-feedback issue. ALL agents review at once, f
 1. Determine relevant agents based on what was changed:
    - File types changed (UI files? API files? config? deps?)
    - Read .agents/registry.md to see which agents are active and when they run
-   - Always run: code-reviewer, bug-finder, security-analyzer, task-checker
+   - Always run: code-reviewer, bug-finder, security-analyzer, performance-optimizer, tester, task-checker
    - Conditionally run:
-       performance-optimizer (if hot paths or DB queries changed)
        dependency-auditor (if package.json/requirements.txt/etc. changed)
-       tester (always — runs the test suite)
        any custom agents from .agents/registry.md based on their `runs_on` field
 
 2. For each relevant agent (one at a time, NEVER in parallel):
@@ -154,7 +153,7 @@ When activating an agent:
 ## Custom agents (added via /additagent)
 
 When you read `.agents/registry.md`, look at each agent's frontmatter:
-- `mode: shadow` → run the agent but DO NOT block tasks based on its findings. Log findings to LESSONS.md. After 3 successful runs without false positives, you can prompt the user to graduate it (or it auto-graduates after 5).
+- `mode: shadow` → run the agent but DO NOT block tasks based on its findings. Log findings to LESSONS.md. After 3 successful runs without false positives, promote it to live mode automatically.
 - `mode: live` → standard agent, blocks tasks based on its severity setting.
 - `disabled: true` → skip entirely.
 
@@ -238,6 +237,7 @@ If the global templates folder is missing, create these `.agents/*.md` files inl
 - `.agents/dependency-auditor.md`
 - `.agents/tester.md`
 - `.agents/task-checker.md`
+- `.agents/pr-merger.md` (final gate for PR merges, used by /mergeprs)
 - `.agents/registry.md` (the registry of which agents run when)
 
 For source content, fetch from: https://github.com/fransanda/autonomous-claude-itagents/tree/main/agents

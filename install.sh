@@ -18,6 +18,7 @@ else
         exit 1
     fi
     TEMP_CLONE="$(mktemp -d)/autonomous-claude-itagents"
+    trap '[ -n "$TEMP_CLONE" ] && rm -rf "$(dirname "$TEMP_CLONE")"' EXIT
     echo "Fetching itagents..."
     git clone --depth=1 --quiet https://github.com/fransanda/autonomous-claude-itagents.git "$TEMP_CLONE"
     SOURCE_ROOT="$TEMP_CLONE"
@@ -27,7 +28,7 @@ echo ""
 echo "Installing autonomous-claude-itagents skills..."
 echo ""
 
-# 1. Install the two skills (/itagentsreview and /additagent) to both possible skill dirs
+# 1. Install the three skills (/itagentsreview, /additagent, and /mergeprs) to both possible skill dirs
 INSTALLED_SKILLS=0
 for skill in itagentsreview additagent mergeprs; do
     SRC="$SOURCE_ROOT/skills/$skill/SKILL.md"
@@ -50,10 +51,6 @@ if [ -d "$SOURCE_ROOT/agents" ]; then
         cp -r "$SOURCE_ROOT/agents/." "$d/_itagents_templates/agents/"
     done
     echo "  ✅ Installed agent templates"
-fi
-
-if [ -n "$TEMP_CLONE" ] && [ -d "$TEMP_CLONE" ]; then
-    rm -rf "$(dirname "$TEMP_CLONE")"
 fi
 
 echo ""

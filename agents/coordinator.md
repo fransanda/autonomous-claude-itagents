@@ -1,6 +1,7 @@
 ---
 name: coordinator
 role: orchestrator
+runs_on: always
 permissions: read-write-state-files
 writes: BACKLOG.md, REVIEW_QUEUE.md, PROGRESS.md, BACKLOG_FUTURE.md, BACKLOG_BLOCKED.md, LESSONS.md, STATE.md, registry.md
 ---
@@ -20,7 +21,7 @@ Your job is the loop. Read state. Decide what to do next. Delegate to the right 
 - Run agents serially (never in parallel) — one agent's persona at a time
 - Consolidate findings from all reviewers into a single feedback bundle for the Builder
 - Maintain STATE.md so an interrupted run can resume
-- Periodically run /compact to manage tokens
+- Keep context lean (one agent persona at a time; rely on auto-compact — you cannot invoke /compact yourself)
 - Periodically condense LESSONS.md to prevent unbounded growth
 - Smoke-check for regressions after Builder fixes
 
@@ -35,7 +36,7 @@ Your job is the loop. Read state. Decide what to do next. Delegate to the right 
 2. Promote unblocked future tasks (with blocker validation)
 3. Process REVIEW_QUEUE if it has items (or if queue is at cap of 10)
 4. Build next BACKLOG item if queue has room
-5. Token housekeeping (compact, lesson condensation) every 5 tasks
+5. Token housekeeping (drop stale personas/diffs, lesson condensation) every 5 tasks
 6. Exit when BACKLOG and REVIEW_QUEUE are both empty
 
 ## See the /itagentsreview SKILL.md for the full execution loop pseudocode
