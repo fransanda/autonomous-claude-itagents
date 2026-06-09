@@ -48,13 +48,24 @@ Result: the same monthly Claude bill, but every task goes through 7+ review pass
 └──────────────────────┬───────────────────────────────────────┘
                        ↓
 ┌─────────────────────────────────────────────────────────────┐
+│  /mergeprs (or auto via /improve Phase 5.5)                  │
+│                                                              │
+│  For each open PR (oldest first):                           │
+│   1. Adaptive review: security + code-reviewer + tester     │
+│   2. Escalate if P2+ findings                               │
+│   3. Builder fixes blockers (up to 5 retries)               │
+│   4. PR Merger (Opus) final gate                            │
+│   5. Auto-merge or comment findings                         │
+└──────────────────────┬───────────────────────────────────────┘
+                       ↓
+┌─────────────────────────────────────────────────────────────┐
 │  /ship → final report, ready to test                         │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## The 9 agents
+## The 10 agents
 
 | Agent | Role |
 |---|---|
@@ -67,6 +78,7 @@ Result: the same monthly Claude bill, but every task goes through 7+ review pass
 | **Dependency Auditor** | CVEs, outdated packages, unused deps, license issues |
 | **Tester** | Runs the test suite, validates a11y, RBAC, edge inputs, unhappy paths |
 | **Task Checker** | Final gate: did the Builder actually deliver what was asked? |
+| **PR Merger** | Final gate before PR merge — heavyweight Opus reviewer (on-demand, via /mergeprs) |
 
 You can add custom agents anytime via `/additagent`.
 
@@ -166,6 +178,35 @@ Runs a **review-only audit** of all completed work in `PROGRESS.md`. This mode:
 
 After `--full`, run `/itagentsreview` (without the flag) to fix the new backlog items.
 
+### `/mergeprs`
+
+Autonomously review and merge open PRs:
+
+```
+/mergeprs
+```
+
+By default, only processes PRs on `improve/*` branches (created by `/improve`). Use `--all` for all open PRs:
+
+```
+/mergeprs --all
+```
+
+The pipeline per PR:
+1. **First-pass review**: security-analyzer, code-reviewer, tester
+2. **Escalation** (if P2+ findings): bug-finder, performance-optimizer, dependency-auditor, task-checker
+3. **Builder fixes** any blockers (up to 5 retries)
+4. **PR Merger** (Opus) does a final heavyweight review — full diff, independent security pass, coherence check, VISION.md alignment
+5. If everything passes: **auto-merge**. If not after 5 retries: **comments findings on PR** for human review.
+
+Configure via `IMPROVE_CONFIG.md`:
+```markdown
+## PR Merge Policy
+- Auto-merge after /improve: no    # set to 'yes' to auto-merge after /improve runs
+- Merge scope: improve-only        # or 'all'
+- Merge model: opus                # model for the pr-merger agent
+```
+
 ### `/additagent`
 
 Add a custom specialist:
@@ -216,6 +257,7 @@ PROJECT/
     ├── dependency-auditor.md
     ├── tester.md
     ├── task-checker.md
+    ├── pr-merger.md
     └── [your custom agents]
 ```
 
@@ -291,6 +333,8 @@ This is **per-project memory** — no global state, no extra cost. It's just a m
 | LESSONS.md got too big | It auto-condenses at 300 lines, but you can manually run /itagentsreview which checks every cycle |
 | Custom agent producing too many false positives | Set `mode: shadow` in its frontmatter, or set `disabled: true` to remove it |
 | Want to start fresh | Delete `.agents/STATE.md` and clear `REVIEW_QUEUE.md` |
+| `/mergeprs` says gh not authenticated | Run `gh auth login` to authenticate the GitHub CLI |
+| PR stuck after 5 retries | Check the PR comments for findings. Fix manually or close and re-create the PR |
 
 ---
 
@@ -299,14 +343,14 @@ This is **per-project memory** — no global state, no extra cost. It's just a m
 ### Mac / Linux
 ```bash
 for d in ~/.claude/skills ~/.agents/skills; do
-  rm -rf "$d/itagentsreview" "$d/additagent" "$d/_itagents_templates"
+  rm -rf "$d/itagentsreview" "$d/additagent" "$d/mergeprs" "$d/_itagents_templates"
 done
 ```
 
 ### Windows
 ```powershell
 foreach ($d in @("$env:USERPROFILE\.claude\skills","$env:USERPROFILE\.agents\skills")) {
-  foreach ($s in @("itagentsreview","additagent","_itagents_templates")) {
+  foreach ($s in @("itagentsreview","additagent","mergeprs","_itagents_templates")) {
     Remove-Item "$d\$s" -Recurse -Force -ErrorAction SilentlyContinue
   }
 }
@@ -327,6 +371,17 @@ Ideas, improvements, and new default agents welcome. Open an issue or PR.
 ## Integration with `/improve`
 
 The `/improve` command from [autonomous-claude-skills](https://github.com/fransanda/autonomous-claude-skills) automatically detects this repo's agents and uses them for deeper scanning. When itagents is installed, `/improve` loads `security-analyzer`, `bug-finder`, `performance-optimizer`, and `dependency-auditor` during its scan phase — giving the improvement loop the same specialist analysis as the full review pipeline, without requiring a manual `/itagentsreview` call.
+
+### Auto-merging PRs after /improve
+
+When both repos are installed, `/improve` can automatically review and merge previously-created improvement PRs at the end of each cycle. Enable in `IMPROVE_CONFIG.md`:
+
+```markdown
+## PR Merge Policy
+- Auto-merge after /improve: yes
+```
+
+This runs the full `/mergeprs` pipeline (adaptive review + Builder fixes + PR Merger final gate) on all pending `improve/*` PRs after the current cycle's improvements are staged.
 
 ## Sister project
 
