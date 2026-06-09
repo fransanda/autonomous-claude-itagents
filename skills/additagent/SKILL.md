@@ -55,7 +55,7 @@ Wait for the user's answer.
 
 Create `.agents/<name>.md` with this exact structure:
 
-```markdown
+````markdown
 ---
 name: <name>
 runs_on: <when_it_runs>
@@ -87,7 +87,7 @@ If no findings: return `NO ISSUES FOUND`.
 
 ## Tags for LESSONS.md
 Use these tags when appending learnings: <tags>
-```
+````
 
 ## Step 5: Update .agents/registry.md
 
@@ -111,6 +111,7 @@ If the registry doesn't yet have a table, create it with this header:
 | dependency-auditor | dep-changes-only | P1 | live | CVEs, outdated, licenses |
 | tester | every-task | blocker | live | runs the test suite |
 | task-checker | every-task | blocker | live | requirements vs output (final gate) |
+| pr-merger | on-demand | blocker | live | final gate before PR merge (/mergeprs) |
 | <new-agent> | <runs_on> | <severity> | shadow | <tags> |
 ```
 

@@ -281,7 +281,7 @@ When the Builder edits a file to fix Task #5, that change might break Task #3 (w
 
 ### Token management
 - One agent definition loaded at a time (load → use → unload)
-- Auto `/compact` every 5 completed tasks
+- Context housekeeping every 5 completed tasks (stale personas and diffs dropped; Claude Code auto-compacts)
 - REVIEW_QUEUE capped at 10 active items (Coordinator pauses building until queue drains)
 - LESSONS.md condenses at 300 lines (with backups, never touching last-30-days entries)
 

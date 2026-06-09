@@ -34,13 +34,14 @@ if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
 fi
 ```
 
-### 3. Record the current branch
+### 3. Record the current branch and the default branch
 
 ```bash
 ORIGINAL_BRANCH=$(git branch --show-current)
+DEFAULT_BRANCH=$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name 2>/dev/null || echo main)
 ```
 
-You will return to this branch when done.
+You will return to `$ORIGINAL_BRANCH` when done. Use `$DEFAULT_BRANCH` (not a hardcoded `main`) for merge-conflict checks.
 
 ### 4. Read configuration
 
@@ -134,7 +135,8 @@ gh pr update-branch <number> 2>&1 || true
 git pull origin <branch>
 
 Check for merge conflicts:
-git merge --no-commit --no-ff main 2>&1
+git fetch origin $DEFAULT_BRANCH
+git merge --no-commit --no-ff origin/$DEFAULT_BRANCH 2>&1
 git merge --abort 2>/dev/null
 
 If conflicts detected:
@@ -281,9 +283,9 @@ If any review agents produced learnings worth preserving (patterns that appeared
 ### Commit state files
 
 ```bash
-git add AUDIT.md LESSONS.md
-git commit -m "docs: /mergeprs session — <merged_count> merged, <failed_count> failed"
-git push
+git add AUDIT.md LESSONS.md 2>/dev/null || true
+git commit -m "docs: /mergeprs session — <merged_count> merged, <failed_count> failed" || echo "Nothing to commit"
+git push || echo "Push failed (offline?)"
 ```
 
 ## Summary output
