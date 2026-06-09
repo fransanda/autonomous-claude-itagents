@@ -324,6 +324,10 @@ MIT — use however you want.
 
 Ideas, improvements, and new default agents welcome. Open an issue or PR.
 
+## Integration with `/improve`
+
+The `/improve` command from [autonomous-claude-skills](https://github.com/fransanda/autonomous-claude-skills) automatically detects this repo's agents and uses them for deeper scanning. When itagents is installed, `/improve` loads `security-analyzer`, `bug-finder`, `performance-optimizer`, and `dependency-auditor` during its scan phase — giving the improvement loop the same specialist analysis as the full review pipeline, without requiring a manual `/itagentsreview` call.
+
 ## Sister project
 
-[autonomous-claude-skills](https://github.com/fransanda/autonomous-claude-skills) — the base layer that makes Claude Code work autonomously. Required for this repo.
+[autonomous-claude-skills](https://github.com/fransanda/autonomous-claude-skills) — the base layer that makes Claude Code work autonomously. Required for this repo. Includes `/kickoff`, `/autonomy`, `/improve`, and `/ship`.
