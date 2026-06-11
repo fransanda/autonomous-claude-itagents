@@ -30,7 +30,7 @@ fi
 ### 2. Check or create the agent system files
 If any of these files don't exist, create them with starter content:
 - `BACKLOG.md`, `BACKLOG_FUTURE.md`, `BACKLOG_BLOCKED.md`, `REVIEW_QUEUE.md`, `PROGRESS.md`, `LESSONS.md`
-- `.agents/` folder with all 10 default agents from the global templates at `~/.claude/skills/_itagents_templates/agents/` or `~/.agents/skills/_itagents_templates/agents/`
+- `.agents/` folder with all 11 default agents (incl. ui-tester) from the global templates at `~/.claude/skills/_itagents_templates/agents/` or `~/.agents/skills/_itagents_templates/agents/`
 - `.agents/registry.md` listing active agents
 
 If templates aren't found globally, create the agent files using the embedded definitions in this skill (see APPENDIX A at the bottom).

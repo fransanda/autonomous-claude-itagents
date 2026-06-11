@@ -40,7 +40,8 @@ Result: the same monthly Claude bill, but every task goes through 7+ review pass
 │                                                              │
 │  Review pipeline per task (one batched pass):               │
 │   Code Reviewer → Bug Finder → Security → Performance →     │
-│   Dependency → Tester → Task Checker (final gate)           │
+│   Dependency → Tester → UI Tester (frontend) →             │
+│   Task Checker (final gate)                                 │
 │                                                              │
 │  Pass → PROGRESS.md ✅                                       │
 │  Fail → stays in queue with consolidated feedback (max 3x)  │
