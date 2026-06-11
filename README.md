@@ -1,6 +1,6 @@
 # 🤖 Autonomous Claude ITAgents
 
-**A 10-agent QA pipeline that reviews every line of code Claude writes.**
+**An 11-agent QA pipeline that reviews every line of code Claude writes — and an army of "client" agents that test the live UI like real humans.**
 
 This repo is the companion to [autonomous-claude-skills](https://github.com/fransanda/autonomous-claude-skills). When both are installed, every project gets:
 
@@ -65,7 +65,7 @@ Result: the same monthly Claude bill, but every task goes through 7+ review pass
 
 ---
 
-## The 10 agents
+## The 11 agents
 
 | Agent | Role |
 |---|---|
@@ -79,8 +79,22 @@ Result: the same monthly Claude bill, but every task goes through 7+ review pass
 | **Tester** | Runs the test suite, validates a11y, RBAC, edge inputs, unhappy paths |
 | **Task Checker** | Final gate: did the Builder actually deliver what was asked? |
 | **PR Merger** | Final gate before PR merge — heavyweight Opus reviewer (on-demand, via /mergeprs) |
+| **UI Tester** | Drives a real browser like a human — registers accounts, clicks, navigates, screenshots; finds empty/broken buttons, mis-routed navigation, wrong scroll targets, broken workflows, and responsive breakage on desktop + mobile. One agent per role (also via `/uitest`) |
 
 You can add custom agents anytime via `/additagent`.
+
+### The UI testing army (live-browser QA)
+
+Static reviewers can read the code, but they can't *see* that a button renders empty, that "Continue" navigates to the wrong page, that an anchor link doesn't scroll to its target, or that the mobile layout overlaps. The **UI Tester** agents close that gap — they act as realistic **clients**:
+
+- **Human replication** — register accounts (one agent per role: buyer, seller, admin, guest…), fill forms, click through menus naturally, no URL teleporting.
+- **Browser tooling** — Playwright MCP preferred, falling back to chrome-devtools MCP → the agent-browser CLI → `npx playwright`, so it runs on most machines.
+- **Visual + workflow checks** — every screen is screenshotted and judged: are elements displayed correctly? Did the click go to the *right* place? Is a step missing? Did the state update on screen?
+- **Desktop AND mobile** — covers desktop (1280×800) + mobile (375×812), explicitly checking responsiveness (reflow, tap targets, collapsed menus, no overflow).
+- **Strict flaw report** — every issue is logged to `UI_FLAW_REPORT.md` with Bug ID, Type, Steps to Reproduce, Expected, Actual (+ screenshot), and Severity — formatted for the Builder/Coordinator to triage and fix.
+- **Self-cleaning test data** — every account it creates is logged to `TEST_USERS.md` (gitignored) *before* registration, then **auto-deleted** at the end of the run; the next run also sweeps any orphans from an interrupted one, so your dataset stays clean.
+
+Run it on demand with `/uitest` (or `/uitest https://staging.example.com`, `/uitest --no-cleanup`, `/uitest --desktop-only`, `/uitest --roles buyer,seller`). The Coordinator also deploys it automatically inside `/itagentsreview` whenever a task touches the frontend.
 
 ---
 
@@ -207,6 +221,25 @@ Configure via `IMPROVE_CONFIG.md`:
 - Merge model: opus                # model for the pr-merger agent
 ```
 
+### `/uitest`
+
+Deploy the live-browser **UI testing army** — autonomous "client" agents that test the rendered app like real humans:
+
+```
+/uitest
+```
+
+It detects whether the project has a UI, finds the user roles (buyer/seller/admin/guest…), starts the dev server, and fans out one agent per role across desktop + mobile. Each registers an account, clicks through the workflows, screenshots every step, and judges whether the UI and the flow make sense. Variants:
+
+```
+/uitest https://staging.example.com   # test a deployed URL instead of localhost
+/uitest --desktop-only                 # skip the mobile/tablet viewports
+/uitest --roles buyer,seller           # only these roles
+/uitest --no-cleanup                   # keep the created test accounts
+```
+
+Output: a strict `UI_FLAW_REPORT.md` (Bug ID · Type · Steps · Expected · Actual + screenshot · Severity) plus screenshots under `.uitest/screenshots/<runid>/`. Every test account it creates is logged to `TEST_USERS.md` (gitignored) and auto-deleted when the run finishes. The Coordinator also runs this army automatically inside `/itagentsreview` whenever a task touches the frontend.
+
 ### `/additagent`
 
 Add a custom specialist:
@@ -245,6 +278,9 @@ PROJECT/
 ├── REVIEW_QUEUE.md        ← built, awaiting review
 ├── PROGRESS.md            ← passed all gates
 ├── LESSONS.md             ← auto-improving memory
+├── UI_FLAW_REPORT.md      ← UI testing army findings (from /uitest)
+├── TEST_USERS.md          ← fake accounts ledger, gitignored, auto-cleaned
+├── .uitest/screenshots/   ← UI test screenshots, gitignored
 └── .agents/
     ├── registry.md         ← which agents are active
     ├── STATE.md           ← run state (auto-managed)
@@ -258,6 +294,7 @@ PROJECT/
     ├── tester.md
     ├── task-checker.md
     ├── pr-merger.md
+    ├── ui-tester.md
     └── [your custom agents]
 ```
 
@@ -299,6 +336,9 @@ Test suites that hang don't deadlock the pipeline. After 10 minutes, Tester repo
 
 ### Fast-track lane for trivial changes
 Running all 7 reviewers on a typo fix wastes ~5 agent activations. Tag a task `[fast-track]` (or let the Builder propose it for a trivial change) and the Coordinator runs a **2-gate review** — `security-analyzer` + `task-checker` only. It's strictly guarded: the Coordinator validates the *actual diff* (≤ 10 changed lines across ≤ 2 files, no auth/security/crypto/DB/dependency/CI/config paths, no new attack surface) and **revokes** to the full pipeline the moment a change stops being trivial. Security and the requirements check are never skipped, so the fast lane saves tokens without lowering the floor.
+
+### UI testing is self-cleaning and non-destructive
+The UI army creates real accounts to test registration/login flows, which would otherwise litter your dataset. Two guarantees keep it clean: every account is written to the `TEST_USERS.md` ledger **before** it's created (so an interrupted run never leaves an untracked orphan), and each run **sweeps stale orphans from prior interrupted runs** before starting. Cleanup runs against the dev/staging target only — the agents never touch a production database, and the testers are read-only to code (they report flaws; only the Builder fixes them).
 
 ---
 

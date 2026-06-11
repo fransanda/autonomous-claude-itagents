@@ -21,6 +21,7 @@ Your job is the loop. Read state. Decide what to do next. Delegate to the right 
 - Run agents serially (never in parallel) — one agent's persona at a time
 - Consolidate findings from all reviewers into a single feedback bundle for the Builder
 - Choose the review lane per task: full pipeline by default, or the **fast-track 2-gate lane** for `[fast-track]`-tagged trivial changes that pass the eligibility guards (revoke to full pipeline if the diff is large or touches sensitive paths)
+- Detect whether the project has a UI/frontend and, if so, **deploy the `ui-tester` army** (live-browser client agents) on UI-affecting tasks — fold their flaw findings into the review feedback like any other reviewer
 - Maintain STATE.md so an interrupted run can resume
 - Keep context lean (one agent persona at a time; rely on auto-compact — you cannot invoke /compact yourself)
 - Periodically condense LESSONS.md to prevent unbounded growth
@@ -41,5 +42,16 @@ Your job is the loop. Read state. Decide what to do next. Delegate to the right 
 4. Build next BACKLOG item if queue has room
 5. Token housekeeping (drop stale personas/diffs, lesson condensation) every 5 tasks
 6. Exit when BACKLOG and REVIEW_QUEUE are both empty
+
+## Deploying the UI testing army
+
+On any task whose diff touches the frontend (and once per `--full` audit), after the static reviewers run:
+1. Confirm the project has a UI (framework in package.json, or html/templates/static dirs). If not, skip.
+2. Determine the user roles (buyer/seller/admin/guest…) and the viewport matrix (desktop + mobile, tablet if responsive-heavy).
+3. Start the dev server (or use a configured staging URL), then deploy one `ui-tester` agent per role **in parallel** (they are read-only to code). Cap concurrency to ~4–6.
+4. Collect their flaw tables → map Critical/High → blockers/P1 into the consolidated feedback for the Builder; Medium/Low → LESSONS.md / BACKLOG_FUTURE.md.
+5. You (single writer) maintain `TEST_USERS.md` — write each created account **before** the agent registers it — and run auto-cleanup at the end. Stop the dev server.
+
+For a full standalone sweep, the human runs `/uitest` (same army, deeper exploration). See the `/uitest` SKILL.md and `.agents/ui-tester.md`.
 
 ## See the /itagentsreview SKILL.md for the full execution loop pseudocode

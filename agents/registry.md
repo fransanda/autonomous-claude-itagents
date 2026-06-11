@@ -16,6 +16,7 @@ This file lists every agent the Coordinator can invoke during /itagentsreview. E
 | tester | every-task | blocker | live | runs tests, a11y, RBAC, edge inputs |
 | task-checker | every-task | blocker | live | requirements vs delivery (final gate) |
 | pr-merger | on-demand | blocker | live | final gate before PR merge (Opus) |
+| ui-tester | ui-tasks-only | P1 | live | drives a real browser like a human — visual + workflow + responsive flaws, one agent per role (also /uitest) |
 
 ## Modes
 - `live` — agent's findings can block tasks based on severity
@@ -31,6 +32,10 @@ This file lists every agent the Coordinator can invoke during /itagentsreview. E
 - `on-keyword:WORD` — only when task title/description contains WORD
 - `always` — runs even outside normal task flow (only coordinator should use this)
 - `on-demand` — only invoked by specific skills (not part of the regular /itagentsreview pipeline)
+
+## UI testing army (live browser QA)
+
+When the Coordinator detects a UI/frontend (or you run `/uitest`), it deploys `ui-tester` agents — autonomous "client" agents that drive a real browser (Playwright MCP → chrome-devtools MCP → agent-browser CLI fallbacks) to register accounts, click, navigate, and screenshot like humans. They find what static reviewers and the curl-based Tester can't: **empty/broken buttons, navigation that lands on the wrong page, wrong scroll targets, missing intermediate screens, broken end-to-end workflows, and responsive breakage on desktop + mobile.** One agent per detected role (buyer/seller/admin/guest…), each covering every viewport. They are **read-only to code** (so they run in parallel) and return findings as a strict flaw table; the orchestrator writes `UI_FLAW_REPORT.md`. Any accounts they create are logged to `TEST_USERS.md` (gitignored) and **auto-deleted** at the end of the run. See `.agents/ui-tester.md` and the `/uitest` SKILL.md.
 
 ## Fast-track lane (trivial changes)
 

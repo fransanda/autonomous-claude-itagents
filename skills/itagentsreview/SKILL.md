@@ -99,6 +99,7 @@ This fixes the multi-agent bouncing-feedback issue. ALL agents review at once, f
    - Always run: code-reviewer, bug-finder, security-analyzer, performance-optimizer, tester, task-checker
    - Conditionally run:
        dependency-auditor (if package.json/requirements.txt/etc. changed)
+       ui-tester (if the diff touches frontend files AND the project has a UI — see UI TESTING ARMY below)
        any custom agents from .agents/registry.md based on their `runs_on` field
 
 2. For each relevant agent (one at a time, NEVER in parallel):
@@ -165,13 +166,37 @@ b) If any blocker:
 
 A fast-track pass logs nothing to LESSONS.md beyond any revocation note (trivial changes rarely carry reusable lessons).
 
+## UI TESTING ARMY (live-browser client agents)
+
+Static reviewers and the curl-based Tester can't see that a rendered button is empty, that a click lands on the wrong page, that an anchor doesn't scroll to its target, or that a mobile layout is broken. The `ui-tester` agents do — they drive a real browser like a human.
+
+Run the UI army when **both**:
+- The task's diff touches frontend files (`.jsx/.tsx/.vue/.svelte/.html/.css`, components, pages, routes, styles), AND
+- The project has a UI (framework in `package.json`, or `html`/`templates`/`static` dirs).
+
+Deployment (the Coordinator orchestrates; `ui-tester` agents are read-only to code so they run in parallel):
+```
+1. Detect roles (buyer/seller/admin/guest…) and viewports (desktop 1280×800 + mobile 375×812; tablet if responsive-heavy).
+2. Start the dev server (or use a configured staging URL); wait until it responds.
+3. Pre-flight: ensure `.gitignore` contains `TEST_USERS.md` and `.uitest/` (fake credentials + bulky screenshots — never commit them); then sweep TEST_USERS.md for orphaned (deleted=no) accounts from interrupted runs and delete them first.
+4. Dispatch one ui-tester agent per role in parallel (cap ~4–6 concurrent). Give each its role, the base URL, the run ID, the viewport matrix, and [ui]/[ux]/[a11y] LESSONS.
+   - Write each account the agent will create to TEST_USERS.md (deleted=no) BEFORE it registers (orphan safety). You are the single writer.
+5. Collect each agent's strict FLAW table. Dedupe across roles. Map severity:
+   - Critical/High → blockers/P1 in the consolidated Builder feedback (same retry/BLOCKED flow as other reviewers)
+   - Medium/Low → LESSONS.md ([ui]/[ux]) or BACKLOG_FUTURE.md
+6. Auto-cleanup: delete every account created this run (UI delete flow → observed API endpoint → safe dev-DB delete). Mark deleted=<timestamp>. Anything undeletable stays deleted=no and is flagged High in the report.
+7. Stop the dev server. Write/append UI_FLAW_REPORT.md.
+```
+
+If no browser automation tool is available (no Playwright MCP, no chrome-devtools MCP, no agent-browser skill), emit one P1 finding `UI tests skipped — no browser automation tool available` and continue the pipeline (don't block on it). For a deeper standalone sweep, the human runs `/uitest`. Full details: the `/uitest` SKILL.md and `.agents/ui-tester.md`.
+
 ## FULL AUDIT MODE (`--full` flag)
 
 This mode is **review-only**. It does NOT mutate code. It generates new backlog items for anything serious.
 
 ```
 1. Load all completed tasks from PROGRESS.md
-2. For each, determine which agents should re-audit it (security-analyzer + dependency-auditor + performance-optimizer always run; others based on file types)
+2. For each, determine which agents should re-audit it (security-analyzer + dependency-auditor + performance-optimizer always run; others based on file types). If the project has a UI, also run a full UI TESTING ARMY sweep (all roles × viewports) once across the app — this is the same army `/uitest` deploys.
 3. Run agents one at a time across the entire codebase (not per-task — full sweep)
 4. Aggregate all findings
 5. For each finding:

@@ -28,9 +28,9 @@ echo ""
 echo "Installing autonomous-claude-itagents skills..."
 echo ""
 
-# 1. Install the three skills (/itagentsreview, /additagent, and /mergeprs) to both possible skill dirs
+# 1. Install the skills (/itagentsreview, /additagent, /mergeprs, /uitest) to both possible skill dirs
 INSTALLED_SKILLS=0
-for skill in itagentsreview additagent mergeprs; do
+for skill in itagentsreview additagent mergeprs uitest; do
     SRC="$SOURCE_ROOT/skills/$skill/SKILL.md"
     if [ ! -f "$SRC" ]; then
         echo "  ⚠️  Source not found for /$skill — skipping"
@@ -54,16 +54,17 @@ if [ -d "$SOURCE_ROOT/agents" ]; then
 fi
 
 echo ""
-if [ $INSTALLED_SKILLS -eq 3 ]; then
+if [ $INSTALLED_SKILLS -eq 4 ]; then
     echo "Done! Restart Claude Code, then use:"
     echo "  /itagentsreview          — run the multi-agent QA pipeline"
     echo "  /itagentsreview --full   — full codebase audit (review-only)"
     echo "  /additagent              — add a custom agent to the project"
     echo "  /mergeprs                — review and merge open PRs autonomously"
+    echo "  /uitest                  — deploy the live-browser UI testing army"
     echo ""
     echo "Note: requires autonomous-claude-skills installed first."
     echo "  curl -fsSL https://raw.githubusercontent.com/fransanda/autonomous-claude-skills/main/install.sh | bash"
     echo ""
 else
-    echo "⚠️  Installation incomplete: $INSTALLED_SKILLS of 3 skills installed"
+    echo "⚠️  Installation incomplete: $INSTALLED_SKILLS of 4 skills installed"
 fi

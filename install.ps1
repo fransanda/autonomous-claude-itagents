@@ -33,7 +33,7 @@ Write-Host "Installing autonomous-claude-itagents skills..." -ForegroundColor Cy
 Write-Host ""
 
 $installed = @()
-foreach ($skill in @("itagentsreview", "additagent", "mergeprs")) {
+foreach ($skill in @("itagentsreview", "additagent", "mergeprs", "uitest")) {
     $source = Join-Path $sourceRoot "skills\$skill\SKILL.md"
     if (-not (Test-Path $source)) {
         Write-Host "  Source not found for /$skill — skipping" -ForegroundColor Yellow
@@ -64,15 +64,16 @@ if ($tempClone -and (Test-Path $tempClone)) {
 }
 
 Write-Host ""
-if ($installed.Count -eq 3) {
+if ($installed.Count -eq 4) {
     Write-Host "Done! Restart Claude Code, then use:" -ForegroundColor Green
     Write-Host "  /itagentsreview          — run the multi-agent QA pipeline" -ForegroundColor White
     Write-Host "  /itagentsreview --full   — full codebase audit (review-only)" -ForegroundColor White
     Write-Host "  /additagent              — add a custom agent to the project" -ForegroundColor White
     Write-Host "  /mergeprs                — review and merge open PRs autonomously" -ForegroundColor White
+    Write-Host "  /uitest                  — deploy the live-browser UI testing army" -ForegroundColor White
     Write-Host ""
     Write-Host "Note: requires autonomous-claude-skills installed first." -ForegroundColor Gray
     Write-Host ""
 } else {
-    Write-Host "Installation incomplete: $($installed.Count) of 3 skills installed. Installed: $($installed -join ', ')" -ForegroundColor Yellow
+    Write-Host "Installation incomplete: $($installed.Count) of 4 skills installed. Installed: $($installed -join ', ')" -ForegroundColor Yellow
 }
