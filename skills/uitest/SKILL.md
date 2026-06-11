@@ -2,7 +2,7 @@
 name: uitest
 description: "Deploy an army of autonomous 'client' UI agents that drive a real browser like humans — register accounts, click, navigate, screenshot — to find visual glitches, empty/broken buttons, mis-routed navigation, wrong scroll targets, broken workflows, and responsive breakage on desktop AND mobile, one agent per user role. Full sweep by default; scope a partial review with --pages/--roles/--desktop-only/--smoke. Produces a strict UI_FLAW_REPORT.md and auto-cleans the test accounts it creates. Use with: /uitest or /uitest <url> or /uitest --pages /checkout,/cart or /uitest --smoke"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Agent, ToolSearch
-argument-hint: "[base URL] [--pages a,b] [--roles a,b] [--desktop-only] [--smoke] [--no-cleanup]"
+argument-hint: "[base URL] [--pages a,b] [--roles a,b] [--desktop-only] [--smoke] [--no-cleanup] [--keep-screenshots]"
 ---
 
 You are the **UI Test Orchestrator**. You deploy a fleet of autonomous "client" agents (`.agents/ui-tester.md`) that interact with the app like real humans to uncover every UI/UX and workflow flaw, then you assemble one report and clean up after them. Arguments: $ARGUMENTS
@@ -29,6 +29,8 @@ By default `/uitest` is a **FULL** sweep: the entire page inventory × all detec
 - `--roles a,b,c` → test only these roles instead of all auto-detected ones. *(scope: roles)*
 - `--pages /checkout,/cart,/product/[id]` → test ONLY these routes instead of the full inventory. Accepts exact routes or glob-ish prefixes (`/admin/*`). The coverage matrix is restricted to these pages. *(scope: pages — this is the "partial review" control)*
 - `--smoke` → fastest pass: primary role only + desktop only + key pages (home, auth, and the main happy-path routes). A quick confidence check, not exhaustive. *(scope: preset)*
+- `--keep-screenshots` → keep ALL screenshots from this run (skip the end-of-run prune of unreferenced ones — see §6.5).
+- `--screenshot-retention <days>` → age-prune window for old run folders (default 7; `0` = keep forever).
 - Generate a short **run ID** (e.g. `ui-YYYYMMDD-HHMM`; you may pass a timestamp in or derive one from `git rev-parse --short HEAD` + a counter — do not rely on randomness).
 
 Whatever scope the flags select, the coverage contract still applies **within that scope** — i.e. a `--pages /checkout` run must still cover `/checkout` at every in-scope viewport with every element exercised. Partial scope shrinks the matrix; it never lowers the per-cell thoroughness bar.
@@ -128,6 +130,19 @@ Unless `--no-cleanup` was passed, delete every account created this run (and any
 
 Mark each row `deleted = <timestamp>` on success. If an account cannot be deleted, leave it `deleted = no` and add a **High** note to the report's top: `⚠️ N test accounts could not be auto-deleted — see TEST_USERS.md and remove manually` (so nothing rots silently).
 
+## 6.5 Screenshot retention (disk hygiene)
+
+Screenshots live in `.uitest/screenshots/<runid>/` (gitignored) and accumulate fast — one per page × viewport × role, every run. Prune them so disk doesn't balloon. Two rules:
+
+1. **End-of-run prune (keep only evidence).** A screenshot's job is done once a page is judged. After the report is written, **keep only the screenshots referenced by a flaw** in this run's `UI_FLAW_REPORT.md` — those are the proof the Builder/human needs. **Delete every unreferenced ("looks fine") screenshot.** On a fully clean pass (no flaws), that means deleting all of this run's screenshots — the COVERAGE record already proves each page was visited, so the pixels add nothing.
+2. **Age prune (sweep old runs).** Delete any `.uitest/screenshots/<runid>/` folder whose run is older than the **retention window (default 7 days)**, regardless of flaws — by then the flaws those shots documented are presumably fixed and the report is historical. Do this at the start of teardown so every run also tidies up after past ones (works even if an earlier run was interrupted before its own prune).
+
+Flags that change this:
+- `--keep-screenshots` → skip the end-of-run prune; keep ALL of this run's screenshots (age prune still applies later).
+- `--screenshot-retention <days>` → change the age window. `--screenshot-retention 0` disables age pruning (keep forever).
+
+Report how many were kept vs pruned in the summary. Never delete `UI_FLAW_REPORT.md` itself — only the image files.
+
 ## 7. Teardown & handoff
 
 - Stop the dev server you started (if any).
@@ -145,8 +160,9 @@ Mark each row `deleted = <timestamp>` on success. If an account cannot be delete
   Coverage:         <covered>/<total> cells (<pct>%)  ·  uncovered: <n> (<reason>)
   Flaws found:      <C> Critical · <H> High · <M> Medium · <L> Low
   Test accounts:    <created> created · <deleted> cleaned up · <left> remaining
+  Screenshots:      <kept> kept (flaw evidence) · <pruned> pruned · <oldRuns> old runs swept
   Report:           UI_FLAW_REPORT.md
-  Screenshots:      .uitest/screenshots/<runid>/
+  Kept shots:       .uitest/screenshots/<runid>/
 ═══════════════════════════════════════════════════════════════
 ```
 

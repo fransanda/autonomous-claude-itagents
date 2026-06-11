@@ -190,7 +190,7 @@ Deployment (the Coordinator orchestrates; `ui-tester` agents are read-only to co
    - Critical/High → **blockers** in the consolidated Builder feedback (empty/broken buttons, mis-routed nav, broken workflows, unusable mobile — same retry/BLOCKED flow as other reviewers)
    - Medium → P1 ; Low → P2/suggestion → LESSONS.md ([ui]/[ux]) or BACKLOG_FUTURE.md
 6. Auto-cleanup: delete every account created this run (UI delete flow → observed API endpoint → safe dev-DB delete). Mark deleted=<timestamp>. Anything undeletable stays deleted=no and is flagged High in the report.
-7. Stop the dev server. Write/append UI_FLAW_REPORT.md.
+7. Stop the dev server. Write/append UI_FLAW_REPORT.md. Prune screenshots: keep only those referenced by a flaw, delete the rest, and sweep `.uitest/screenshots/` run folders older than 7 days (same retention as `/uitest` §6.5 — `.uitest/` is gitignored).
 ```
 
 If no browser automation tool is available (no Playwright MCP, no chrome-devtools MCP, no agent-browser skill), emit one P1 finding `UI tests skipped — no browser automation tool available` and continue the pipeline (don't block on it). For a deeper standalone sweep, the human runs `/uitest`. Full details: the `/uitest` SKILL.md and `.agents/ui-tester.md`.

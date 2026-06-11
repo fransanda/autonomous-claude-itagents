@@ -245,7 +245,10 @@ It detects whether the project has a UI, finds the user roles (buyer/seller/admi
 /uitest --desktop-only                 # skip the mobile/tablet viewports
 /uitest --smoke                        # fastest pass: primary role + desktop + key pages
 /uitest --no-cleanup                   # keep the created test accounts
+/uitest --keep-screenshots             # keep all shots (default prunes unreferenced ones)
 ```
+
+**Screenshots self-prune.** They live in `.uitest/screenshots/<runid>/` (gitignored). At the end of each run, only screenshots a flaw actually references are kept (the evidence to fix it); the "looks fine" shots from clean pages are deleted, and a fully clean run keeps none. Run folders older than 7 days are swept automatically (`--screenshot-retention <days>`, `0` = keep forever; `--keep-screenshots` keeps the current run intact).
 
 **Full vs partial is the orchestrator's call.** Standalone `/uitest` is a full sweep by default and you narrow it with the flags above. Inside `/itagentsreview`, the Coordinator runs a *partial* sweep scoped to the pages the current task's diff touches (fast per-task feedback), while `/itagentsreview --full` re-tests the entire app. Partial scope shrinks the coverage matrix but never lowers the per-page thoroughness bar.
 
