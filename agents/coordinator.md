@@ -47,7 +47,7 @@ Your job is the loop. Read state. Decide what to do next. Delegate to the right 
 
 On any task whose diff touches the frontend (and once per `--full` audit), after the static reviewers run:
 1. Confirm the project has a UI (framework in package.json, or html/templates/static dirs). If not, skip.
-2. Determine the user roles (buyer/seller/admin/guest…) and the viewport matrix (desktop + mobile, tablet if responsive-heavy).
+2. **Decide scope.** Per-task review = **partial**: restrict to the pages the Builder's diff affects (changed component → the routes that render it). The `--full` audit = **full**: the whole page inventory. Then determine the user roles (buyer/seller/admin/guest…) and the viewport matrix (desktop + mobile, tablet if responsive-heavy).
 3. Start the dev server (or use a configured staging URL), then deploy one `ui-tester` agent per role **in parallel** (they are read-only to code). Cap concurrency to ~4–6.
 4. Collect their flaw tables → map Critical/High → blockers/P1 into the consolidated feedback for the Builder; Medium/Low → LESSONS.md / BACKLOG_FUTURE.md.
 5. You (single writer) maintain `TEST_USERS.md` — write each created account **before** the agent registers it — and run auto-cleanup at the end. Stop the dev server.

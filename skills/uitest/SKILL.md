@@ -1,8 +1,8 @@
 ---
 name: uitest
-description: "Deploy an army of autonomous 'client' UI agents that drive a real browser like humans — register accounts, click, navigate, screenshot — to find visual glitches, empty/broken buttons, mis-routed navigation, wrong scroll targets, broken workflows, and responsive breakage on desktop AND mobile, one agent per user role. Produces a strict UI_FLAW_REPORT.md and auto-cleans the test accounts it creates. Use with: /uitest or /uitest <url> or /uitest --no-cleanup"
+description: "Deploy an army of autonomous 'client' UI agents that drive a real browser like humans — register accounts, click, navigate, screenshot — to find visual glitches, empty/broken buttons, mis-routed navigation, wrong scroll targets, broken workflows, and responsive breakage on desktop AND mobile, one agent per user role. Full sweep by default; scope a partial review with --pages/--roles/--desktop-only/--smoke. Produces a strict UI_FLAW_REPORT.md and auto-cleans the test accounts it creates. Use with: /uitest or /uitest <url> or /uitest --pages /checkout,/cart or /uitest --smoke"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Agent, ToolSearch
-argument-hint: "[optional: base URL] [--no-cleanup] [--desktop-only] [--roles a,b,c]"
+argument-hint: "[base URL] [--pages a,b] [--roles a,b] [--desktop-only] [--smoke] [--no-cleanup]"
 ---
 
 You are the **UI Test Orchestrator**. You deploy a fleet of autonomous "client" agents (`.agents/ui-tester.md`) that interact with the app like real humans to uncover every UI/UX and workflow flaw, then you assemble one report and clean up after them. Arguments: $ARGUMENTS
@@ -20,12 +20,18 @@ if ls templates/ public/ static/ 2>/dev/null | grep -q .; then HAS_UI=1; fi
 ```
 If `HAS_UI=0`: print `No UI/frontend detected — /uitest does nothing for backend-only projects.` and exit. (The Coordinator uses this same check before auto-deploying.)
 
-## 1. Parse arguments
+## 1. Parse arguments — scope is set here (full vs partial)
+
+By default `/uitest` is a **FULL** sweep: the entire page inventory × all detected roles × desktop+mobile. The flags below narrow it to a **PARTIAL** review — mix them freely:
 - A bare URL (e.g. `https://staging.example.com`) → use it as the base URL (do NOT start a local server).
 - `--no-cleanup` → keep created test accounts (still log them; skip the auto-delete phase).
-- `--desktop-only` → skip the mobile/tablet viewports (default is desktop + mobile).
-- `--roles a,b,c` → test only these roles instead of auto-detected ones.
+- `--desktop-only` → skip the mobile/tablet viewports (default is desktop + mobile). *(scope: viewports)*
+- `--roles a,b,c` → test only these roles instead of all auto-detected ones. *(scope: roles)*
+- `--pages /checkout,/cart,/product/[id]` → test ONLY these routes instead of the full inventory. Accepts exact routes or glob-ish prefixes (`/admin/*`). The coverage matrix is restricted to these pages. *(scope: pages — this is the "partial review" control)*
+- `--smoke` → fastest pass: primary role only + desktop only + key pages (home, auth, and the main happy-path routes). A quick confidence check, not exhaustive. *(scope: preset)*
 - Generate a short **run ID** (e.g. `ui-YYYYMMDD-HHMM`; you may pass a timestamp in or derive one from `git rev-parse --short HEAD` + a counter — do not rely on randomness).
+
+Whatever scope the flags select, the coverage contract still applies **within that scope** — i.e. a `--pages /checkout` run must still cover `/checkout` at every in-scope viewport with every element exercised. Partial scope shrinks the matrix; it never lowers the per-cell thoroughness bar.
 
 ## 2. Pre-flight: stale-ledger sweep (interruption safety)
 
@@ -60,7 +66,7 @@ Build the route inventory **from the codebase** so coverage is grounded in fact,
 - Include each **dynamic route** (`/product/[id]`) once, to be filled with a real sample id discovered during the run.
 - Tag pages that require login with the role(s) that can reach them (from route guards / nav visibility).
 
-This `PAGE_INVENTORY` is the authoritative row-set of the coverage matrix below. "Every page" means every entry here — the agent cannot define the scope down by only visiting what it happened to find.
+This `PAGE_INVENTORY` is the authoritative row-set of the coverage matrix below. "Every page" means every entry here — the agent cannot define the scope down by only visiting what it happened to find. **If `--pages` (or a diff-scoped Coordinator deployment) was given, filter the inventory to those routes now** — that filtered set becomes the matrix rows. Still build the full inventory first so you can validate that the requested routes actually exist (warn on any that don't).
 
 ## 4. Deploy the army (coverage-driven, parallel)
 

@@ -240,10 +240,14 @@ It detects whether the project has a UI, finds the user roles (buyer/seller/admi
 
 ```
 /uitest https://staging.example.com   # test a deployed URL instead of localhost
-/uitest --desktop-only                 # skip the mobile/tablet viewports
+/uitest --pages /checkout,/cart        # PARTIAL: only these routes (full inventory by default)
 /uitest --roles buyer,seller           # only these roles
+/uitest --desktop-only                 # skip the mobile/tablet viewports
+/uitest --smoke                        # fastest pass: primary role + desktop + key pages
 /uitest --no-cleanup                   # keep the created test accounts
 ```
+
+**Full vs partial is the orchestrator's call.** Standalone `/uitest` is a full sweep by default and you narrow it with the flags above. Inside `/itagentsreview`, the Coordinator runs a *partial* sweep scoped to the pages the current task's diff touches (fast per-task feedback), while `/itagentsreview --full` re-tests the entire app. Partial scope shrinks the coverage matrix but never lowers the per-page thoroughness bar.
 
 Output: a strict `UI_FLAW_REPORT.md` (Bug ID · Type · Steps · Expected · Actual + screenshot · Severity) plus screenshots under `.uitest/screenshots/<runid>/`. Every test account it creates is logged to `TEST_USERS.md` (gitignored) and auto-deleted when the run finishes. The Coordinator also runs this army automatically inside `/itagentsreview` whenever a task touches the frontend.
 

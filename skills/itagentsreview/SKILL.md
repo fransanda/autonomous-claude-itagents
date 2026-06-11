@@ -174,9 +174,14 @@ Run the UI army when **both**:
 - The task's diff touches frontend files (`.jsx/.tsx/.vue/.svelte/.html/.css`, components, pages, routes, styles), AND
 - The project has a UI (framework in `package.json`, or `html`/`templates`/`static` dirs).
 
+**Scope — partial vs full (the Coordinator decides):**
+- **Per-task review (normal mode):** run a **PARTIAL** sweep scoped to the pages the Builder's diff actually affects. Map changed files → the routes/pages that render them (a changed `Checkout.tsx` → `/checkout`; a shared header/layout → the handful of top pages that use it). Don't re-test the whole app on every frontend task — that's slow and wasteful.
+- **Full audit (`--full`):** run the **FULL** inventory × all roles × all viewports (see FULL AUDIT MODE).
+- Either way it's the same army `/uitest` deploys; per-task just passes a restricted page list (equivalent to `/uitest --pages …`).
+
 Deployment (the Coordinator orchestrates; `ui-tester` agents are read-only to code so they run in parallel):
 ```
-1. Detect roles (buyer/seller/admin/guest…) and viewports (desktop 1280×800 + mobile 375×812; tablet if responsive-heavy).
+1. Detect roles (buyer/seller/admin/guest…) and viewports (desktop 1280×800 + mobile 375×812; tablet if responsive-heavy). For a per-task review, restrict the page list to the diff-affected routes; for --full, use the whole inventory.
 2. Start the dev server (or use a configured staging URL); wait until it responds.
 3. Pre-flight: ensure `.gitignore` contains `TEST_USERS.md` and `.uitest/` (fake credentials + bulky screenshots — never commit them); then sweep TEST_USERS.md for orphaned (deleted=no) accounts from interrupted runs and delete them first.
 4. Build a PAGE_INVENTORY from the codebase (routes/pages) and a coverage matrix (pages × role × viewport). Dispatch one ui-tester agent per role in parallel (cap ~4–6 concurrent). Give each its role, its explicit page list, the base URL, the run ID, the viewport matrix, and [ui]/[ux]/[a11y] LESSONS. Completion is coverage-gated: each agent returns a COVERAGE record; re-dispatch for any uncovered cell (cap 3 rounds) until every cell is COVERED or UNREACHABLE-with-reason — don't accept "looks fine."
