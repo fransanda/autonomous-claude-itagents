@@ -16,7 +16,7 @@ This file lists every agent the Coordinator can invoke during /itagentsreview. E
 | tester | every-task | blocker | live | runs tests, a11y, RBAC, edge inputs |
 | task-checker | every-task | blocker | live | requirements vs delivery (final gate) |
 | pr-merger | on-demand | blocker | live | final gate before PR merge (Opus) |
-| ui-tester | ui-tasks-only | P1 | live | drives a real browser like a human — visual + workflow + responsive flaws, one agent per role (also /uitest) |
+| ui-tester | ui-tasks-only | blocker | live | drives a real browser like a human — visual + workflow + responsive flaws, one agent per role (also /uitest). Critical/High block; Medium=P1, Low=P2 |
 
 ## Modes
 - `live` — agent's findings can block tasks based on severity

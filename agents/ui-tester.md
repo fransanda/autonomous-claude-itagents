@@ -3,7 +3,7 @@ name: ui-tester
 role: autonomous-ui-qa
 permissions: can-execute-browser, read-only-code
 writes: returns findings + created-account records (orchestrator writes UI_FLAW_REPORT.md and TEST_USERS.md)
-severity: P1
+severity: blocker
 runs_on: ui-tasks-only
 timeout_minutes: 20
 tags: ui, ux, e2e, visual, responsive, a11y, workflow, rbac

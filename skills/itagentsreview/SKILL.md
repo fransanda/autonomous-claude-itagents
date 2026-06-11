@@ -181,9 +181,9 @@ Deployment (the Coordinator orchestrates; `ui-tester` agents are read-only to co
 3. Pre-flight: ensure `.gitignore` contains `TEST_USERS.md` and `.uitest/` (fake credentials + bulky screenshots — never commit them); then sweep TEST_USERS.md for orphaned (deleted=no) accounts from interrupted runs and delete them first.
 4. Dispatch one ui-tester agent per role in parallel (cap ~4–6 concurrent). Give each its role, the base URL, the run ID, the viewport matrix, and [ui]/[ux]/[a11y] LESSONS.
    - Write each account the agent will create to TEST_USERS.md (deleted=no) BEFORE it registers (orphan safety). You are the single writer.
-5. Collect each agent's strict FLAW table. Dedupe across roles. Map severity:
-   - Critical/High → blockers/P1 in the consolidated Builder feedback (same retry/BLOCKED flow as other reviewers)
-   - Medium/Low → LESSONS.md ([ui]/[ux]) or BACKLOG_FUTURE.md
+5. Collect each agent's strict FLAW table. Dedupe across roles. Map severity (one coherent model — matches `.agents/ui-tester.md`):
+   - Critical/High → **blockers** in the consolidated Builder feedback (empty/broken buttons, mis-routed nav, broken workflows, unusable mobile — same retry/BLOCKED flow as other reviewers)
+   - Medium → P1 ; Low → P2/suggestion → LESSONS.md ([ui]/[ux]) or BACKLOG_FUTURE.md
 6. Auto-cleanup: delete every account created this run (UI delete flow → observed API endpoint → safe dev-DB delete). Mark deleted=<timestamp>. Anything undeletable stays deleted=no and is flagged High in the report.
 7. Stop the dev server. Write/append UI_FLAW_REPORT.md.
 ```
