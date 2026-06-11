@@ -106,6 +106,13 @@ Run it on demand with `/uitest` (or `/uitest https://staging.example.com`, `/uit
 3. [GitHub CLI](https://cli.github.com/) (`gh`) installed and authenticated
 4. Git installed
 5. A Claude Pro, Max, or API subscription
+6. **A browser automation tool — REQUIRED for any project with a UI** (the UI testing army can't run without one). Install at least one:
+   - **Playwright MCP** (recommended): `claude mcp add playwright -- npx @playwright/mcp@latest`
+   - **chrome-devtools MCP** — alternative MCP server
+   - **agent-browser** skill — self-contained Rust CLI (no MCP server needed)
+   - **`npx playwright`** — last-resort fallback: `npx playwright install`
+
+   Backend-only projects (no UI) don't need this. `/uitest` detects whichever is available and falls back through the list; if none is present it reports that and skips rather than failing silently.
 
 ### Install in 2 steps
 
