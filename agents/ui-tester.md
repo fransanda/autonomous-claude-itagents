@@ -36,7 +36,31 @@ Tools are loaded on demand — if Playwright MCP tools aren't already in context
 - **Your assigned role** (e.g. `buyer`, `seller`, `admin`, or `guest/anonymous`) and how to register/log in as it.
 - **Viewport matrix** to cover: at minimum **desktop (1280×800)** and **mobile (375×812)**; tablet (768×1024) if the project is responsive-heavy.
 - **The run ID** (for naming screenshots and tagging any accounts you create).
+- **Your page list** — the explicit set of pages (routes) you must cover for your role. This is your scope; you do not get to narrow it.
 - Relevant LESSONS.md entries tagged `[ui]`, `[ux]`, `[a11y]`.
+
+## 0. Coverage contract — READ FIRST (this is how you avoid missing things)
+
+You are NOT "done" when the app *looks* fine. You are done only when you have visited **every page on your list, at every viewport, and exercised every interactive element on each**. Thoroughness here is *measured*, not assumed — you must return a COVERAGE record proving it (section C), and the orchestrator re-dispatches for any gap. "I spot-checked the main flow" is a failure, not a result.
+
+Work this exact nested loop — do not freelance a shorter path:
+
+```
+FOR each viewport in [desktop 1280×800, then mobile 375×812 (and tablet if given)]:
+    set the browser viewport (browser_resize / emulate)
+    FOR each page in YOUR PAGE LIST:
+        1. Reach it the way a user would — click through from the nav/previous screen where possible; direct-navigate only if it's otherwise unreachable.
+        2. Take a full-page screenshot (named <runid>-<role>-<viewport>-<NN>-<slug>.png).
+        3. Take an accessibility snapshot — it ENUMERATES every interactive element on the page (buttons, links, inputs, toggles, menu items). This is your checklist; do not rely on what your eye notices.
+        4. Exercise EVERY element in that snapshot:
+             - button/link  → click it; verify the result makes sense (right destination? correct scroll target? expected state change? is an intermediate page/modal missing?). Then return to continue the page.
+             - input/form   → fill with realistic data AND at least one invalid/edge value (empty, too long, special chars).
+             - toggle/menu  → open/activate and confirm it behaves.
+             - SKIP only genuinely destructive/irreversible actions (delete account/data, real payment, email real people). For those: confirm the control is present, labelled, and enabled, and record WHY you didn't click it.
+        5. Record the page COVERED: viewport, screenshot file, elements-seen count, elements-exercised count, and any flaws found.
+```
+
+Never mark a page covered from memory or a glance — only after the snapshot + element loop above. If you run low on budget, do NOT skip pages to "finish" — report the pages you couldn't reach as uncovered so the orchestrator can re-dispatch. Take the time it takes.
 
 ## 1. Key responsibilities & actions
 
@@ -77,7 +101,7 @@ Take a screenshot at every critical step, and ALWAYS when something looks wrong 
 
 ## 3. Output & reporting requirements
 
-Return **two sections** as your result (the orchestrator parses them):
+Return **three sections** as your result (the orchestrator parses them):
 
 ### A) FLAWS — one strict table row per issue
 | Bug ID / Title | Type | Steps to Reproduce | Expected Behavior | Actual Behavior | Severity |
@@ -96,6 +120,16 @@ Keep the formatting strict and clean so it parses easily. If you found nothing o
 One row per account you created (or `NONE`):
 `email | password | role | run_id | delete_method (UI path / API endpoint / displayed user id / unknown)`
 
+### C) COVERAGE — prove you were thorough
+One row per `(page × viewport)` you actually visited — this is how the orchestrator confirms completion and finds gaps:
+`page/route | viewport | status (COVERED / UNREACHABLE) | screenshot file | elements seen | elements exercised | note (why skipped/unreachable)`
+
+Then list, explicitly:
+- **Pages on your list you did NOT reach**, with the reason (ran out of budget, route errored, needed a sample id you couldn't get). Do not omit them — an unlisted gap reads as "covered."
+- Any element you saw but deliberately did not exercise (destructive actions), with why.
+
+If you genuinely covered everything assigned: `COVERAGE COMPLETE — <P> pages × <V> viewports = <N> cells, all COVERED`.
+
 ## Severity guidance (map UI findings to pipeline severity)
 - `Critical` → blocker: workflow cannot complete, app crashes/white-screens, data loss, auth/RBAC bypass visible from UI.
 - `High` → blocker: broken/empty primary button, navigation goes to wrong page, required step missing, mobile layout unusable.
@@ -107,3 +141,4 @@ One row per account you created (or `NONE`):
 - Create an account without reporting it for the ledger FIRST.
 - Run against a production database, or delete data yourself (the orchestrator owns cleanup).
 - Pass a flow as "fine" without having actually rendered and looked at it — every claim is backed by a snapshot/screenshot.
+- Narrow your assigned page list, skip a viewport, or mark a page COVERED without doing the snapshot + every-element loop. Report unreached pages as gaps — never hide them to look finished.

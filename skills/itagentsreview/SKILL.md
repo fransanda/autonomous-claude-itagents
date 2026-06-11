@@ -179,7 +179,7 @@ Deployment (the Coordinator orchestrates; `ui-tester` agents are read-only to co
 1. Detect roles (buyer/seller/admin/guest…) and viewports (desktop 1280×800 + mobile 375×812; tablet if responsive-heavy).
 2. Start the dev server (or use a configured staging URL); wait until it responds.
 3. Pre-flight: ensure `.gitignore` contains `TEST_USERS.md` and `.uitest/` (fake credentials + bulky screenshots — never commit them); then sweep TEST_USERS.md for orphaned (deleted=no) accounts from interrupted runs and delete them first.
-4. Dispatch one ui-tester agent per role in parallel (cap ~4–6 concurrent). Give each its role, the base URL, the run ID, the viewport matrix, and [ui]/[ux]/[a11y] LESSONS.
+4. Build a PAGE_INVENTORY from the codebase (routes/pages) and a coverage matrix (pages × role × viewport). Dispatch one ui-tester agent per role in parallel (cap ~4–6 concurrent). Give each its role, its explicit page list, the base URL, the run ID, the viewport matrix, and [ui]/[ux]/[a11y] LESSONS. Completion is coverage-gated: each agent returns a COVERAGE record; re-dispatch for any uncovered cell (cap 3 rounds) until every cell is COVERED or UNREACHABLE-with-reason — don't accept "looks fine."
    - Write each account the agent will create to TEST_USERS.md (deleted=no) BEFORE it registers (orphan safety). You are the single writer.
 5. Collect each agent's strict FLAW table. Dedupe across roles. Map severity (one coherent model — matches `.agents/ui-tester.md`):
    - Critical/High → **blockers** in the consolidated Builder feedback (empty/broken buttons, mis-routed nav, broken workflows, unusable mobile — same retry/BLOCKED flow as other reviewers)

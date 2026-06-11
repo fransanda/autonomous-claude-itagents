@@ -54,18 +54,35 @@ If no URL arg was given, start the app yourself:
 ### Viewport matrix
 Default: `desktop (1280×800)` + `mobile (375×812)`. Add `tablet (768×1024)` if the project looks responsive-heavy (Tailwind breakpoints, media queries, a mobile menu). `--desktop-only` drops the mobile/tablet rows.
 
-## 4. Deploy the army (parallel fan-out)
+### Page inventory (the authoritative "every page" list)
+Build the route inventory **from the codebase** so coverage is grounded in fact, not guessed by the agent:
+- Next.js: enumerate `app/**/page.*` or `pages/**/*`. React Router / Vue Router / SvelteKit: parse the router config or file-based routes. Plain HTML: list every `.html`. Server-rendered (Express/Flask/Django): list the view routes that return pages.
+- Include each **dynamic route** (`/product/[id]`) once, to be filled with a real sample id discovered during the run.
+- Tag pages that require login with the role(s) that can reach them (from route guards / nav visibility).
+
+This `PAGE_INVENTORY` is the authoritative row-set of the coverage matrix below. "Every page" means every entry here — the agent cannot define the scope down by only visiting what it happened to find.
+
+## 4. Deploy the army (coverage-driven, parallel)
 
 The `ui-tester` agents are **read-only to code** (they only return findings + created-account records), so they run safely in parallel — unlike the serial code-review pipeline.
 
-For each role in the matrix, dispatch a `ui-tester` agent (use the Agent tool; run them concurrently, but cap concurrency to ~4–6 to avoid thrashing the dev server — queue the rest). Give each agent:
+**Build the COVERAGE MATRIX** before dispatching: rows = `PAGE_INVENTORY` (filtered per role to the pages that role can access), columns = `(role × viewport)`. Every cell must end as `COVERED` or `UNREACHABLE-with-reason`. This matrix — not the agent's sense of "done" — defines completion.
+
+For each role, dispatch a `ui-tester` agent (use the Agent tool; concurrent, cap ~4–6 to avoid thrashing the dev server — queue the rest). Give each agent:
 - The persona/checklist from `.agents/ui-tester.md`
 - Its assigned **role** + how to register/log in as it
-- The **base URL**, the **run ID**, and the **viewport matrix** (each agent covers desktop then mobile for its role)
+- Its **explicit page list** (its rows of the matrix) and **both viewports** (desktop then mobile) — it is NOT done until every page on its list is visited at every viewport with every interactive element exercised (its **coverage contract** — see `.agents/ui-tester.md`)
+- The **base URL**, the **run ID**, and the screenshot directory `.uitest/screenshots/<runid>/`
 - Relevant `LESSONS.md` entries tagged `[ui] [ux] [a11y]`
-- The screenshot directory: `.uitest/screenshots/<runid>/`
 
-Each agent explores its role's full journey end-to-end, captures screenshots, and returns its two sections: **FLAWS** (strict table rows) and **ACCOUNTS CREATED**.
+Each agent returns three sections: **FLAWS**, **ACCOUNTS CREATED**, and a **COVERAGE** record (one row per page × viewport it actually visited, with screenshot + element-exercised counts).
+
+**Completion loop (loop-until-complete, not until-tired):**
+1. Collect every agent's COVERAGE records; mark each proven cell `COVERED` in the matrix.
+2. Compute `coverage = covered cells / total cells`.
+3. For any cell still uncovered (agent stopped early, errored, or skipped a reachable page) → **re-dispatch a fresh ui-tester for ONLY the missing cells**. Repeat. Cap at 3 rounds so a genuinely-broken page can't loop forever.
+4. A cell may be closed `UNREACHABLE` only with a logged reason (route behind a feature flag, needs real payment, dynamic id couldn't be obtained, etc.).
+5. The run completes only when **every cell is `COVERED` or `UNREACHABLE-with-reason`.** Record the final coverage % and list anything not covered — never silently drop a page.
 
 **Ledger-first rule:** when an agent reports it is about to create an account, write that row to `TEST_USERS.md` with `deleted = no` *before* acknowledging — never after. (You are the single writer of `TEST_USERS.md`.)
 
@@ -80,6 +97,7 @@ Collect every agent's FLAWS into one report at the project root. Deduplicate fin
 - Base URL: <url>
 - Roles tested: <list>   |   Viewports: <list>
 - Agents deployed: <N>   |   Screenshots: .uitest/screenshots/<runid>/
+- Coverage: <covered>/<total> page×viewport×role cells (<pct>%)  |  Uncovered: <list pages + reason, or "none">
 - Summary: <C> Critical, <H> High, <M> Medium, <L> Low
 
 | Bug ID / Title | Type | Steps to Reproduce | Expected Behavior | Actual Behavior | Severity |
@@ -117,7 +135,8 @@ Mark each row `deleted = <timestamp>` on success. If an account cannot be delete
   🖥️  UI TEST SWEEP COMPLETE — <run ID>
 ═══════════════════════════════════════════════════════════════
   Roles tested:     <list>          Viewports: <list>
-  Agents deployed:  <N>             Screens visited: <count>
+  Agents deployed:  <N>             Pages in inventory: <count>
+  Coverage:         <covered>/<total> cells (<pct>%)  ·  uncovered: <n> (<reason>)
   Flaws found:      <C> Critical · <H> High · <M> Medium · <L> Low
   Test accounts:    <created> created · <deleted> cleaned up · <left> remaining
   Report:           UI_FLAW_REPORT.md
