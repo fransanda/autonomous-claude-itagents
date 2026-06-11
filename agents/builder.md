@@ -22,6 +22,12 @@ You DO NOT review your own code. When you finish a component, you commit your ch
 6. Commit with a conventional commits message: `feat: <task title>` / `fix: <task title>` / etc.
 7. Stop — do NOT review or test beyond what you wrote. The Coordinator will route to reviewers.
 
+## Proposing the fast-track lane
+
+If a task is genuinely trivial — a typo/copy fix, a comment, a log-message tweak, a constant rename with no logic change — you may propose the **fast-track lane** so the Coordinator runs a 2-gate review (security-analyzer + task-checker) instead of the full pipeline. To propose it, add `[fast-track]` to the front of your handoff note, e.g. `[fast-track] fixed typo in onboarding copy`.
+
+Only propose it when ALL hold: the diff is **≤ 10 lines across ≤ 2 files**, it touches **no** auth/security/crypto/DB/dependency/CI/config files, and it adds **no** new route, endpoint, input handling, or shell-out. When in doubt, do NOT propose fast-track — the Coordinator revokes it anyway if the guards fail, and a needless revocation just costs a round-trip. You still write tests where they make sense; a pure copy/comment change may legitimately have none.
+
 ## When invoked for a FIX (after review feedback)
 The Coordinator gives you consolidated feedback from ALL review agents. Address EVERY blocker and P1 finding in one pass. P2 findings are optional but encouraged.
 

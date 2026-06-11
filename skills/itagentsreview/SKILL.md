@@ -64,7 +64,9 @@ while BACKLOG.has_items() OR REVIEW_QUEUE.has_items():
     If REVIEW_QUEUE has items AND total queue size <= 10:
         Pick OLDEST task in REVIEW_QUEUE.
         Update STATE.md: current_task=<id>, current_step=review
-        Run BATCHED REVIEW (see below)
+        Decide the review lane (see FAST-TRACK ELIGIBILITY below):
+            - eligible  → Run FAST-TRACK REVIEW (2-gate)
+            - otherwise → Run BATCHED REVIEW (full pipeline)
         Continue loop.
     Else if REVIEW_QUEUE has items AND queue is at 10+:
         Process review (skip building until queue drains below 8). This is the queue cap.
@@ -119,6 +121,49 @@ This fixes the multi-agent bouncing-feedback issue. ALL agents review at once, f
       - If retry_count >= 3: move task to BACKLOG_BLOCKED.md with the feedback as context. Print: 🛑 Task #<id> failed review 3 times → moved to BACKLOG_BLOCKED.md (needs human review)
       - Else: re-activate Builder with the consolidated feedback. Builder addresses ALL findings in one pass and commits a fix. Then this task stays in REVIEW_QUEUE for re-review on next loop iteration. Print: ↻ Task #<id> needs fixes (retry <count>/3): <count> blockers, <count> P1
 ```
+
+## FAST-TRACK ELIGIBILITY (trivial-change lane)
+
+Running all 7 reviewers on a typo fix or a one-line copy tweak wastes ~5 agent activations. The fast-track lane skips the heavyweight reviewers for genuinely trivial changes — but **never** skips security or the requirements check, and it auto-revokes the moment a change stops being trivial.
+
+A task takes the fast-track lane ONLY when **ALL** of these hold:
+
+1. **Tagged trivial.** The task's title/description in REVIEW_QUEUE.md contains the `[fast-track]` tag (added by a human in BACKLOG.md, or proposed by the Builder in its handoff for a trivial change).
+2. **Tiny diff.** `git diff --stat HEAD~1 HEAD` shows **≤ 10 changed lines total AND ≤ 2 files**.
+3. **No sensitive paths.** None of the changed files match security-/risk-sensitive patterns (case-insensitive):
+   - auth/login/session/password/token/crypto/security in the path
+   - `*.sql`, query builders, ORM models, migrations, or DB-layer files
+   - dependency manifests or lockfiles (`package.json`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `requirements*.txt`, `Pipfile*`, `go.mod`, `go.sum`, `Gemfile*`, `pom.xml`, `*.csproj`, `Cargo.toml`)
+   - CI/infra/config (`.github/`, `Dockerfile*`, `*.yml`/`*.yaml` in CI dirs, `*.tf`, `.env*`, anything reading secrets)
+4. **No new attack surface.** The diff adds no new route/endpoint/handler, form, input-parsing, deserialization, `eval`/exec, file I/O on user paths, or shell-out.
+
+If the `[fast-track]` tag is present but **any** guard (2–4) fails → **revoke**: route the task through the full BATCHED REVIEW instead, append a `[process]` note to LESSONS.md (`Fast-track revoked on Task #<id>: <reason>`), and print:
+```
+⚠️  Fast-track revoked (Task #<id>): <reason> → full pipeline
+```
+
+If a task has **no** `[fast-track]` tag, it always takes the full BATCHED REVIEW — fast-track is opt-in, never the default.
+
+## FAST-TRACK REVIEW (2-gate)
+
+For an eligible task, run exactly two agents (one at a time, serial, same single-writer rule):
+
+```
+1. security-analyzer  (blocker gate — the fast lane NEVER skips security)
+2. task-checker       (blocker gate — did the change actually do what was asked, without collateral edits?)
+
+Then:
+a) If zero blockers from both:
+   - Move task to PROGRESS.md (note "fast-tracked" beside the entry)
+   - Run the same smoke-check for regressions as BATCHED REVIEW (git diff --name-only HEAD~1 HEAD → re-review overlapping completed tasks with bug-finder + tester only)
+   - Print: ⚡ Task #<id> fast-tracked → 2-gate review passed → PROGRESS.md
+b) If any blocker:
+   - retry_count += 1, append feedback to the task in REVIEW_QUEUE.md
+   - If retry_count >= 3: move to BACKLOG_BLOCKED.md (same as full pipeline). Print: 🛑 Task #<id> failed fast-track 3 times → BACKLOG_BLOCKED.md
+   - Else: re-activate Builder with the feedback. On the re-build, re-check FAST-TRACK ELIGIBILITY — if the fix grew the diff past the guards, the task drops to the full pipeline automatically.
+```
+
+A fast-track pass logs nothing to LESSONS.md beyond any revocation note (trivial changes rarely carry reusable lessons).
 
 ## FULL AUDIT MODE (`--full` flag)
 
@@ -219,6 +264,8 @@ Examples:
 - `→ Code Reviewer reviewing Task #5...`
 - `→ Security Analyzer reviewing Task #5...`
 - `✅ Task #5 passed all gates → moved to PROGRESS.md`
+- `⚡ Task #6 fast-tracked → 2-gate review passed → PROGRESS.md`
+- `⚠️  Fast-track revoked (Task #7): diff touched package.json → full pipeline`
 - `↻ Task #5 needs fixes (retry 1/3): 2 blockers, 1 P1`
 - `🛑 Task #5 failed review 3 times → moved to BACKLOG_BLOCKED.md`
 

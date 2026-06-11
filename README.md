@@ -297,6 +297,9 @@ The Coordinator writes `STATE.md` at every step. If the run is interrupted, the 
 ### Tester timeout
 Test suites that hang don't deadlock the pipeline. After 10 minutes, Tester reports `review-incomplete` (not failed) and the loop continues.
 
+### Fast-track lane for trivial changes
+Running all 7 reviewers on a typo fix wastes ~5 agent activations. Tag a task `[fast-track]` (or let the Builder propose it for a trivial change) and the Coordinator runs a **2-gate review** — `security-analyzer` + `task-checker` only. It's strictly guarded: the Coordinator validates the *actual diff* (≤ 10 changed lines across ≤ 2 files, no auth/security/crypto/DB/dependency/CI/config paths, no new attack surface) and **revokes** to the full pipeline the moment a change stops being trivial. Security and the requirements check are never skipped, so the fast lane saves tokens without lowering the floor.
+
 ---
 
 ## Auto-improving memory

@@ -32,6 +32,10 @@ This file lists every agent the Coordinator can invoke during /itagentsreview. E
 - `always` — runs even outside normal task flow (only coordinator should use this)
 - `on-demand` — only invoked by specific skills (not part of the regular /itagentsreview pipeline)
 
+## Fast-track lane (trivial changes)
+
+A task tagged `[fast-track]` in BACKLOG.md (or proposed by the Builder for a trivial change) skips the heavyweight reviewers and runs a **2-gate review**: `security-analyzer` + `task-checker` only. The Coordinator validates eligibility against the real diff before fast-tracking — **≤ 10 changed lines across ≤ 2 files, no sensitive paths (auth/security/crypto/DB/dependency/CI/config), and no new attack surface**. If any guard fails, fast-track is revoked and the task runs the full pipeline. Security and the requirements check are *never* skipped. See the FAST-TRACK ELIGIBILITY section in the /itagentsreview SKILL.md for the full guard list.
+
 ## How custom agents graduate from shadow → live
 After 3 successful pipeline runs without producing false positives (i.e. its findings were either valid or low-confidence enough to be ignored), the Coordinator promotes a shadow agent to live mode automatically. This protects the pipeline from poorly-defined custom agents on day one.
 
